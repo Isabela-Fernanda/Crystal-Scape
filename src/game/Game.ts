@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 import { Arena } from './Arena';
+import { Player } from './Player';
 
 export class Game {
     private scene: THREE.Scene;
@@ -8,6 +9,7 @@ export class Game {
     private renderer: THREE.WebGLRenderer;
 
     private arena: Arena;
+    private player: Player;
     private animationId: number | null = null;
     private resizeObserver: ResizeObserver;
 
@@ -78,6 +80,10 @@ export class Game {
 
         directionalLight.position.set(5, 10, 5);
         this.scene.add(directionalLight);
+
+        // Criação do jogador
+        this.player = new Player();
+        this.scene.add(this.player.group);
 
         // Ajuste inicial do tamanho
         this.resize();
