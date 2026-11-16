@@ -8,6 +8,11 @@ export class Player {
     private leftLeg: THREE.Group;
     private rightLeg: THREE.Group;
 
+    private cameraForward = new THREE.Vector3();
+    private cameraRight = new THREE.Vector3();
+    private worldUp = new THREE.Vector3(0, 1, 0);
+    private moveDirection = new THREE.Vector3();
+
     private isMoving = false;
     private walkTime = 0;
 
@@ -289,27 +294,37 @@ export class Player {
         this.keys.clear();
     };
 
-    public update(deltaTime: number) {
-        const moveX =
-            (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) -
-            (this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0);
+    public update(deltaTime: number, camera: THREE.Camera) {
+        const moveX = (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) - (this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0);
 
-        const moveZ =
-            (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) -
-            (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0);
+        const moveZ = (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) - (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0);
 
-        this.direction.set(moveX, 0, moveZ);
+        // Obtém a direção horizontal para a qual a câmera aponta.
+        camera.getWorldDirection(this.cameraForward);
+        this.cameraForward.y = 0;
+        this.cameraForward.normalize();
 
-        this.isMoving = this.direction.lengthSq() > 0;
+        // Calcula a direção lateral em relação à câmera.
+        this.cameraRight.crossVectors(
+            this.cameraForward,
+            this.worldUp
+        ).normalize();
+
+        // Combina os movimentos horizontal e vertical.
+        this.moveDirection
+            .set(0, 0, 0)
+            .addScaledVector(this.cameraForward, moveZ)
+            .addScaledVector(this.cameraRight, moveX);
+
+        this.isMoving = this.moveDirection.lengthSq() > 0;
 
         if (this.isMoving) {
-            this.direction.normalize();
+            this.moveDirection.normalize();
 
-            this.group.position.x +=
-                this.direction.x * this.moveSpeed * deltaTime;
-
-            this.group.position.z +=
-                this.direction.z * this.moveSpeed * deltaTime;
+            this.group.position.addScaledVector(
+                this.moveDirection,
+                this.moveSpeed * deltaTime
+            );
 
             // Limita o personagem ao interior da arena.
             this.group.position.x = THREE.MathUtils.clamp(
@@ -326,18 +341,16 @@ export class Player {
 
             // Faz o personagem olhar para a direção do movimento.
             this.group.rotation.y = Math.atan2(
-                this.direction.x,
-                this.direction.z
+                this.moveDirection.x,
+                this.moveDirection.z
             );
 
-            // Anima braços e pernas.
             this.walkTime += deltaTime * 8;
 
             const movement = Math.sin(this.walkTime) * 0.5;
 
             this.leftArm.rotation.x = movement;
             this.rightArm.rotation.x = -movement;
-
             this.leftLeg.rotation.x = -movement;
             this.rightLeg.rotation.x = movement;
 

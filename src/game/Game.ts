@@ -33,8 +33,8 @@ export class Game {
             1000
         );
 
-        this.camera.position.set(8, 8, 10);
-        this.camera.lookAt(0, 0, 0);
+        this.camera.position.set(0, 7, -8);
+        this.camera.lookAt(0, 1.4, 0);
 
         // Renderizador
         this.renderer = new THREE.WebGLRenderer({
@@ -115,12 +115,33 @@ export class Game {
 
             this.timer.update();
             const deltaTime = this.timer.getDelta();
-            this.player.update(deltaTime);
+
+            this.player.update(deltaTime, this.camera);
+
+            this.updateCamera(deltaTime);
 
             this.renderer.render(this.scene, this.camera);
         };
 
         animate();
+    }
+
+    private updateCamera(deltaTime: number) {
+        const targetPosition = new THREE.Vector3(
+            this.player.group.position.x,
+            this.player.group.position.y + 7,
+            this.player.group.position.z - 8
+        );
+
+        const smoothing = 1 - Math.exp(-5 * deltaTime);
+
+        this.camera.position.lerp(targetPosition, smoothing);
+
+        this.camera.lookAt(
+            this.player.group.position.x,
+            this.player.group.position.y + 1.4,
+            this.player.group.position.z
+        );
     }
 
     dispose() {
