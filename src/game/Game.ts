@@ -116,7 +116,7 @@ export class Game {
             this.timer.update();
             const deltaTime = this.timer.getDelta();
 
-            this.player.update(deltaTime, this.camera);
+            this.player.update(deltaTime, this.camera, this.arena.getCollisionBoxes());
 
             this.updateCamera(deltaTime);
 

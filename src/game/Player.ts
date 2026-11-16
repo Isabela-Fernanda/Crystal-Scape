@@ -294,7 +294,23 @@ export class Player {
         this.keys.clear();
     };
 
-    public update(deltaTime: number, camera: THREE.Camera) {
+    private isColliding(
+        x: number,
+        z: number,
+        collisionBoxes: THREE.Box3[]
+    ): boolean {
+        // Área aproximada ocupada pelo personagem.
+        const playerBox = new THREE.Box3(
+            new THREE.Vector3(x - 0.45, 0, z - 0.45),
+            new THREE.Vector3(x + 0.45, 2.9, z + 0.45)
+        );
+
+        return collisionBoxes.some((box) =>
+            playerBox.intersectsBox(box)
+        );
+    }
+
+    public update(deltaTime: number, camera: THREE.Camera, collisionBoxes: THREE.Box3[]) {
         const moveX = (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) - (this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0);
 
         const moveZ = (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) - (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0);
@@ -321,10 +337,41 @@ export class Player {
         if (this.isMoving) {
             this.moveDirection.normalize();
 
-            this.group.position.addScaledVector(
-                this.moveDirection,
-                this.moveSpeed * deltaTime
+            const movementX =
+                this.moveDirection.x * this.moveSpeed * deltaTime;
+
+            const movementZ =
+                this.moveDirection.z * this.moveSpeed * deltaTime;
+
+            // Tenta movimentar no eixo X.
+            const nextX = THREE.MathUtils.clamp(
+                this.group.position.x + movementX,
+                -8.8,
+                8.8
             );
+
+            if (!this.isColliding(
+                nextX,
+                this.group.position.z,
+                collisionBoxes
+            )) {
+                this.group.position.x = nextX;
+            }
+
+            // Tenta movimentar no eixo Z.
+            const nextZ = THREE.MathUtils.clamp(
+                this.group.position.z + movementZ,
+                -8.8,
+                8.8
+            );
+
+            if (!this.isColliding(
+                this.group.position.x,
+                nextZ,
+                collisionBoxes
+            )) {
+                this.group.position.z = nextZ;
+            }
 
             // Limita o personagem ao interior da arena.
             this.group.position.x = THREE.MathUtils.clamp(

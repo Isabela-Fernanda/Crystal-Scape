@@ -8,6 +8,8 @@ export class Arena {
     private woodDetailMaterial: THREE.MeshStandardMaterial;
     private grassMaterial: THREE.MeshStandardMaterial;
 
+    private collisionBoxes: THREE.Box3[] = [];
+
     constructor() {
         this.group = new THREE.Group();
 
@@ -150,6 +152,12 @@ export class Arena {
             rock.receiveShadow = true;
 
             this.group.add(rock);
+
+            // Calcula a área ocupada pela pedra no mundo 3D.
+            rock.updateMatrixWorld(true);
+
+            const collisionBox = new THREE.Box3().setFromObject(rock);
+            this.collisionBoxes.push(collisionBox);
         });
     }
 
@@ -209,11 +217,21 @@ export class Arena {
         crate.position.set(x, 0, z);
 
         this.group.add(crate);
+
+        // Calcula a área ocupada pela caixa.
+        crate.updateMatrixWorld(true);
+
+        const collisionBox = new THREE.Box3().setFromObject(crate);
+        this.collisionBoxes.push(collisionBox);
     }
 
     private createCrates() {
         this.createCrate(-5, 0);
         this.createCrate(5, -3);
         this.createCrate(3, 6);
+    }
+
+    public getCollisionBoxes(): THREE.Box3[] {
+        return this.collisionBoxes;
     }
 }
