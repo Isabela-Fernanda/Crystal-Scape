@@ -113,7 +113,9 @@ export class Game {
         const animate = () => {
             this.animationId = requestAnimationFrame(animate);
 
+            this.timer.update();
             const deltaTime = this.timer.getDelta();
+            this.player.update(deltaTime);
 
             this.renderer.render(this.scene, this.camera);
         };
@@ -150,6 +152,7 @@ export class Game {
             }
         });
 
+        this.player.dispose();
         this.renderer.dispose();
         this.renderer.domElement.remove();
     }

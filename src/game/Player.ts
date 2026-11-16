@@ -11,6 +11,10 @@ export class Player {
     private isMoving = false;
     private walkTime = 0;
 
+    private keys = new Set<string>();
+    private direction = new THREE.Vector3();
+    private readonly moveSpeed = 4;
+
     constructor() {
         this.group = new THREE.Group();
 
@@ -176,6 +180,10 @@ export class Player {
 
         // Altura e posição inicial
         this.group.position.set(0, 0, 0);
+
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+        window.addEventListener('blur', this.handleBlur);
     }
 
     private createArm(
@@ -258,48 +266,112 @@ export class Player {
         return leg;
     }
 
+    private handleKeyDown = (event: KeyboardEvent) => {
+        const key = event.key.toLowerCase();
+
+        const validKeys = [
+            'w', 'a', 's', 'd',
+            'arrowup', 'arrowdown',
+            'arrowleft', 'arrowright',
+        ];
+
+        if (validKeys.includes(key)) {
+            event.preventDefault();
+            this.keys.add(key);
+        }
+    };
+
+    private handleKeyUp = (event: KeyboardEvent) => {
+        this.keys.delete(event.key.toLowerCase());
+    };
+
+    private handleBlur = () => {
+        this.keys.clear();
+    };
+
     public update(deltaTime: number) {
-        if (!this.isMoving) {
-            // Retorna os membros à posição original
+        const moveX =
+            (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) -
+            (this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0);
+
+        const moveZ =
+            (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) -
+            (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0);
+
+        this.direction.set(moveX, 0, moveZ);
+
+        this.isMoving = this.direction.lengthSq() > 0;
+
+        if (this.isMoving) {
+            this.direction.normalize();
+
+            this.group.position.x +=
+                this.direction.x * this.moveSpeed * deltaTime;
+
+            this.group.position.z +=
+                this.direction.z * this.moveSpeed * deltaTime;
+
+            // Limita o personagem ao interior da arena.
+            this.group.position.x = THREE.MathUtils.clamp(
+                this.group.position.x,
+                -8.8,
+                8.8
+            );
+
+            this.group.position.z = THREE.MathUtils.clamp(
+                this.group.position.z,
+                -8.8,
+                8.8
+            );
+
+            // Faz o personagem olhar para a direção do movimento.
+            this.group.rotation.y = Math.atan2(
+                this.direction.x,
+                this.direction.z
+            );
+
+            // Anima braços e pernas.
+            this.walkTime += deltaTime * 8;
+
+            const movement = Math.sin(this.walkTime) * 0.5;
+
+            this.leftArm.rotation.x = movement;
+            this.rightArm.rotation.x = -movement;
+
+            this.leftLeg.rotation.x = -movement;
+            this.rightLeg.rotation.x = movement;
+
+        } else {
+            // Retorna os membros à posição inicial suavemente.
+            const smoothing = 1 - Math.exp(-12 * deltaTime);
+
             this.leftArm.rotation.x = THREE.MathUtils.lerp(
-                this.leftArm.rotation.x,
-                0,
-                0.15
+                this.leftArm.rotation.x, 0, smoothing
             );
 
             this.rightArm.rotation.x = THREE.MathUtils.lerp(
-                this.rightArm.rotation.x,
-                0,
-                0.15
+                this.rightArm.rotation.x, 0, smoothing
             );
 
             this.leftLeg.rotation.x = THREE.MathUtils.lerp(
-                this.leftLeg.rotation.x,
-                0,
-                0.15
+                this.leftLeg.rotation.x, 0, smoothing
             );
 
             this.rightLeg.rotation.x = THREE.MathUtils.lerp(
-                this.rightLeg.rotation.x,
-                0,
-                0.15
+                this.rightLeg.rotation.x, 0, smoothing
             );
-
-            return;
         }
-
-        this.walkTime += deltaTime * 8;
-
-        const movement = Math.sin(this.walkTime) * 0.5;
-
-        this.leftArm.rotation.x = movement;
-        this.rightArm.rotation.x = -movement;
-
-        this.leftLeg.rotation.x = -movement;
-        this.rightLeg.rotation.x = movement;
     }
 
     public setMoving(moving: boolean) {
         this.isMoving = moving;
+    }
+
+    public dispose() {
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener('blur', this.handleBlur);
+
+        this.keys.clear();
     }
 }
