@@ -2,26 +2,26 @@ import { useEffect, useRef } from 'react';
 import { Game } from '../game/Game';
 
 export function GameCanvas() {
-  const containerRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const container = containerRef.current;
+    useEffect(() => {
+        const container = containerRef.current;
 
-    if (!container) return;
+        if (!container) return;
 
-    const game = new Game(container);
+        const game = new Game(container);
 
-    game.start();
+        game.start();
 
-    return () => {
-      game.dispose();
-    };
-  }, []);
+        return () => {
+            game.dispose();
+        };
+    }, []);
 
-  return (
-    <div
-      ref={containerRef}
-      className="w-full h-full"
-    />
-  );
+    return (
+        <div
+            ref={containerRef}
+            className="w-full h-full"
+        />
+    );
 }
