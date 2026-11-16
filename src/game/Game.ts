@@ -12,6 +12,7 @@ export class Game {
     private player: Player;
     private animationId: number | null = null;
     private resizeObserver: ResizeObserver;
+    private timer = new THREE.Timer();
 
     private container: HTMLElement
 
@@ -111,6 +112,8 @@ export class Game {
     start() {
         const animate = () => {
             this.animationId = requestAnimationFrame(animate);
+
+            const deltaTime = this.timer.getDelta();
 
             this.renderer.render(this.scene, this.camera);
         };

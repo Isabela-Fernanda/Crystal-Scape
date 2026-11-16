@@ -8,6 +8,9 @@ export class Player {
     private leftLeg: THREE.Group;
     private rightLeg: THREE.Group;
 
+    private isMoving = false;
+    private walkTime = 0;
+
     constructor() {
         this.group = new THREE.Group();
 
@@ -253,5 +256,50 @@ export class Player {
         );
 
         return leg;
+    }
+
+    public update(deltaTime: number) {
+        if (!this.isMoving) {
+            // Retorna os membros à posição original
+            this.leftArm.rotation.x = THREE.MathUtils.lerp(
+                this.leftArm.rotation.x,
+                0,
+                0.15
+            );
+
+            this.rightArm.rotation.x = THREE.MathUtils.lerp(
+                this.rightArm.rotation.x,
+                0,
+                0.15
+            );
+
+            this.leftLeg.rotation.x = THREE.MathUtils.lerp(
+                this.leftLeg.rotation.x,
+                0,
+                0.15
+            );
+
+            this.rightLeg.rotation.x = THREE.MathUtils.lerp(
+                this.rightLeg.rotation.x,
+                0,
+                0.15
+            );
+
+            return;
+        }
+
+        this.walkTime += deltaTime * 8;
+
+        const movement = Math.sin(this.walkTime) * 0.5;
+
+        this.leftArm.rotation.x = movement;
+        this.rightArm.rotation.x = -movement;
+
+        this.leftLeg.rotation.x = -movement;
+        this.rightLeg.rotation.x = movement;
+    }
+
+    public setMoving(moving: boolean) {
+        this.isMoving = moving;
     }
 }
