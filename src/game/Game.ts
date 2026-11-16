@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 
+import { Arena } from './Arena';
+
 export class Game {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
 
-    private cube: THREE.Mesh;
+    private arena: Arena;
     private animationId: number | null = null;
     private resizeObserver: ResizeObserver;
 
@@ -42,56 +44,40 @@ export class Game {
 
         this.container.appendChild(this.renderer.domElement);
 
-        // Chão
-        const groundGeometry = new THREE.PlaneGeometry(20, 20);
-
-        const groundMaterial = new THREE.MeshStandardMaterial({
-            color: 0x4c9b55,
-        });
-
-        const ground = new THREE.Mesh(
-            groundGeometry,
-            groundMaterial
-        );
-
-        ground.rotation.x = -Math.PI / 2;
-        this.scene.add(ground);
-
-        // Grade para visualizar o espaço
-        const grid = new THREE.GridHelper(20, 20);
-        this.scene.add(grid);
+        // Criação da arena
+        this.arena = new Arena();
+        this.scene.add(this.arena.group);
 
         // Iluminação ambiente
         const ambientLight = new THREE.AmbientLight(
             0xffffff,
-            0.6
+            0.7
         );
 
         this.scene.add(ambientLight);
 
+        // Luz hemisférica
+        const hemisphereLight = new THREE.HemisphereLight(
+            0xbde0ff,
+            0x52613b,
+            0.5
+        );
+
+        this.scene.add(hemisphereLight);
+
         // Luz direcional
         const directionalLight = new THREE.DirectionalLight(
             0xffffff,
-            1
+            1.5
         );
+
+        directionalLight.position.set(5, 12, 5);
+        directionalLight.castShadow = true;
+
+        this.scene.add(directionalLight);
 
         directionalLight.position.set(5, 10, 5);
         this.scene.add(directionalLight);
-
-        // Cubo temporário para teste
-        const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-
-        const cubeMaterial = new THREE.MeshStandardMaterial({
-            color: 0xff0000,
-        });
-
-        this.cube = new THREE.Mesh(
-            cubeGeometry,
-            cubeMaterial
-        );
-
-        this.cube.position.y = 0.5;
-        this.scene.add(this.cube);
 
         // Ajuste inicial do tamanho
         this.resize();
@@ -119,8 +105,6 @@ export class Game {
     start() {
         const animate = () => {
             this.animationId = requestAnimationFrame(animate);
-
-            this.cube.rotation.y += 0.01;
 
             this.renderer.render(this.scene, this.camera);
         };
