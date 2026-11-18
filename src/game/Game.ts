@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { Arena } from './Arena';
 import { Player } from './Player';
+import { Enemy } from './Enemy';
 
 export class Game {
     private scene: THREE.Scene;
@@ -10,6 +11,7 @@ export class Game {
 
     private arena: Arena;
     private player: Player;
+    private enemy: Enemy;
     private animationId: number | null = null;
     private resizeObserver: ResizeObserver;
     private timer = new THREE.Timer();
@@ -85,6 +87,10 @@ export class Game {
         // Criação do jogador
         this.player = new Player();
         this.scene.add(this.player.group);
+
+        this.enemy = new Enemy();
+        this.enemy.group.position.set(0, 0, -5);
+        this.scene.add(this.enemy.group);
 
         // Ajuste inicial do tamanho
         this.resize();
