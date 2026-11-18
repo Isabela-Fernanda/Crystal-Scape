@@ -124,6 +124,8 @@ export class Game {
 
             this.player.update(deltaTime, this.camera, this.arena.getCollisionBoxes());
 
+            this.enemy.update(deltaTime);
+
             this.updateCamera(deltaTime);
 
             this.renderer.render(this.scene, this.camera);

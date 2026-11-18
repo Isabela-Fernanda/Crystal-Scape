@@ -17,7 +17,6 @@ export class Player {
     private walkTime = 0;
 
     private keys = new Set<string>();
-    private direction = new THREE.Vector3();
     private readonly moveSpeed = 4;
 
     constructor() {

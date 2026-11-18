@@ -10,6 +10,10 @@ export class Enemy {
     private tail: THREE.Group;
     private jaw: THREE.Group;
 
+    private walkTime = 0;
+    private isMoving = false;
+    private animationSpeed = 5;
+
     constructor() {
         this.group = new THREE.Group();
 
@@ -290,5 +294,62 @@ export class Enemy {
         }
 
         return arm;
+    }
+
+    public update(deltaTime: number) {
+        if (this.isMoving) {
+            this.walkTime += deltaTime * this.animationSpeed;
+
+            const movement = Math.sin(this.walkTime) * 0.45;
+
+            // Pernas: movimento alternado.
+            this.leftLeg.rotation.x = movement;
+            this.rightLeg.rotation.x = -movement;
+
+            // Braços: acompanham o movimento das pernas.
+            this.leftArm.rotation.x = -movement * 0.5;
+            this.rightArm.rotation.x = movement * 0.5;
+
+            // Cauda: balanço lateral.
+            this.tail.rotation.y = Math.sin(this.walkTime * 0.5) * 0.18;
+
+            // Mandíbula: pequena abertura durante o movimento.
+            this.jaw.rotation.x = Math.max(
+                0,
+                Math.sin(this.walkTime * 2)
+            ) * 0.08;
+
+        } else {
+            // Retorna as partes articuladas à posição inicial.
+            const smoothing = 1 - Math.exp(-5 * deltaTime);
+
+            this.leftLeg.rotation.x = THREE.MathUtils.lerp(
+                this.leftLeg.rotation.x, 0, smoothing
+            );
+
+            this.rightLeg.rotation.x = THREE.MathUtils.lerp(
+                this.rightLeg.rotation.x, 0, smoothing
+            );
+
+            this.leftArm.rotation.x = THREE.MathUtils.lerp(
+                this.leftArm.rotation.x, 0, smoothing
+            );
+
+            this.rightArm.rotation.x = THREE.MathUtils.lerp(
+                this.rightArm.rotation.x, 0, smoothing
+            );
+
+            this.tail.rotation.y = THREE.MathUtils.lerp(
+                this.tail.rotation.y, 0, smoothing
+            );
+
+            this.jaw.rotation.x = THREE.MathUtils.lerp(
+                this.jaw.rotation.x, 0, smoothing
+            );
+        }
+    }
+
+    public setMoving(moving: boolean) {
+        this.isMoving = moving;
     }
 }
