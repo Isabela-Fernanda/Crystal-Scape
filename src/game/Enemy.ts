@@ -1,5 +1,13 @@
 import * as THREE from 'three';
 
+const EnemyState = {
+    Patrolling: 0,
+    Chasing: 1,
+} as const;
+
+type EnemyState =
+    typeof EnemyState[keyof typeof EnemyState];
+
 export class Enemy {
     public readonly group: THREE.Group;
 
@@ -13,6 +21,24 @@ export class Enemy {
     private walkTime = 0;
     private isMoving = false;
     private animationSpeed = 5;
+
+    private patrolPoints: THREE.Vector3[] = [
+        new THREE.Vector3(-12, 0, -12),
+        new THREE.Vector3(12, 0, -12),
+        new THREE.Vector3(12, 0, 12),
+        new THREE.Vector3(-12, 0, 12),
+    ];
+
+    private currentPatrolPoint = 0;
+    private patrolSpeed = 1.5;
+    private arrivalDistance = 0.4;
+
+    private state: EnemyState = EnemyState.Patrolling;
+
+    private chaseSpeed = 4.5;
+    private detectionRadius = 8;
+
+    private direction = new THREE.Vector3();
 
     constructor() {
         this.group = new THREE.Group();
@@ -296,31 +322,133 @@ export class Enemy {
         return arm;
     }
 
-    public update(deltaTime: number) {
+    public update(
+        deltaTime: number,
+        playerPosition: THREE.Vector3
+    ) {
+        // Calcula a distância horizontal até o jogador.
+        const distanceToPlayer = Math.hypot(
+            playerPosition.x - this.group.position.x,
+            playerPosition.z - this.group.position.z
+        );
+
+        // Decide o comportamento da criatura.
+        if (distanceToPlayer <= this.detectionRadius) {
+            this.state = EnemyState.Chasing;
+        } else {
+            this.state = EnemyState.Patrolling;
+        }
+
+        // Executa o comportamento correspondente.
+        if (this.state === EnemyState.Chasing) {
+            this.chase(playerPosition, deltaTime);
+        } else {
+            this.patrol(deltaTime);
+        }
+
+        // Atualiza a animação.
+        this.updateAnimation(deltaTime);
+    }
+
+    public setMoving(moving: boolean) {
+        this.isMoving = moving;
+    }
+
+    private patrol(deltaTime: number) {
+        const target = this.patrolPoints[this.currentPatrolPoint];
+
+        // Calcula a direção até o próximo ponto.
+        const direction = new THREE.Vector3()
+            .subVectors(target, this.group.position);
+
+        direction.y = 0;
+
+        const distance = direction.length();
+
+        // Verifica se chegou ao destino.
+        if (distance <= this.arrivalDistance) {
+            this.currentPatrolPoint =
+                (this.currentPatrolPoint + 1) % this.patrolPoints.length;
+
+            this.setMoving(false);
+            return;
+        }
+
+        direction.normalize();
+
+        // Movimenta o inimigo.
+        this.group.position.addScaledVector(
+            direction,
+            this.patrolSpeed * deltaTime
+        );
+
+        // Faz o inimigo olhar para a direção do movimento.
+        this.group.rotation.y = Math.atan2(
+            direction.x,
+            direction.z
+        );
+
+        this.setMoving(true);
+    }
+
+    private chase(
+        playerPosition: THREE.Vector3,
+        deltaTime: number
+    ) {
+        this.direction
+            .subVectors(playerPosition, this.group.position);
+
+        this.direction.y = 0;
+
+        const distance = this.direction.length();
+
+        if (distance === 0) {
+            this.setMoving(false);
+            return;
+        }
+
+        this.direction.normalize();
+
+        // Movimenta a criatura em direção ao jogador.
+        const movement = Math.min(
+            this.chaseSpeed * deltaTime,
+            distance
+        );
+
+        this.group.position.addScaledVector(
+            this.direction,
+            movement
+        );
+
+        // Faz a criatura olhar para o jogador.
+        this.group.rotation.y = Math.atan2(
+            this.direction.x,
+            this.direction.z
+        );
+
+        this.setMoving(true);
+    }
+
+    private updateAnimation(deltaTime: number) {
         if (this.isMoving) {
             this.walkTime += deltaTime * this.animationSpeed;
 
             const movement = Math.sin(this.walkTime) * 0.45;
 
-            // Pernas: movimento alternado.
             this.leftLeg.rotation.x = movement;
             this.rightLeg.rotation.x = -movement;
 
-            // Braços: acompanham o movimento das pernas.
             this.leftArm.rotation.x = -movement * 0.5;
             this.rightArm.rotation.x = movement * 0.5;
 
-            // Cauda: balanço lateral.
             this.tail.rotation.y = Math.sin(this.walkTime * 0.5) * 0.18;
 
-            // Mandíbula: pequena abertura durante o movimento.
             this.jaw.rotation.x = Math.max(
                 0,
                 Math.sin(this.walkTime * 2)
             ) * 0.08;
 
         } else {
-            // Retorna as partes articuladas à posição inicial.
             const smoothing = 1 - Math.exp(-5 * deltaTime);
 
             this.leftLeg.rotation.x = THREE.MathUtils.lerp(
@@ -347,9 +475,5 @@ export class Enemy {
                 this.jaw.rotation.x, 0, smoothing
             );
         }
-    }
-
-    public setMoving(moving: boolean) {
-        this.isMoving = moving;
     }
 }

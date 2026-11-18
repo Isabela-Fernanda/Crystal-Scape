@@ -41,7 +41,7 @@ export class Arena {
     }
 
     private createGround() {
-        const geometry = new THREE.PlaneGeometry(20, 20);
+        const geometry = new THREE.PlaneGeometry(40, 40);
 
         const ground = new THREE.Mesh(
             geometry,
@@ -57,7 +57,7 @@ export class Arena {
     private createWalls() {
         const wallHeight = 2.5;
         const wallThickness = 0.6;
-        const wallLength = 20;
+        const wallLength = 40;
 
         const createWall = (
             width: number,
@@ -90,7 +90,7 @@ export class Arena {
             wallHeight,
             wallThickness,
             0,
-            -10
+            -20
         );
 
         createWall(
@@ -98,7 +98,7 @@ export class Arena {
             wallHeight,
             wallThickness,
             0,
-            10
+            20
         );
 
         // Paredes leste e oeste
@@ -106,7 +106,7 @@ export class Arena {
             wallThickness,
             wallHeight,
             wallLength,
-            -10,
+            -20,
             0
         );
 
@@ -114,19 +114,19 @@ export class Arena {
             wallThickness,
             wallHeight,
             wallLength,
-            10,
+            20,
             0
         );
     }
 
     private createRocks() {
         const positions = [
-            [-7, -6],
-            [7, -7],
-            [-6, 6],
-            [7, 6],
-            [-4, -2],
-            [5, 3],
+            [-14, -12],
+            [14, -14],
+            [-12, 12],
+            [14, 12],
+            [-8, -4],
+            [10, 6],
         ];
 
         positions.forEach(([x, z], index) => {
@@ -226,9 +226,9 @@ export class Arena {
     }
 
     private createCrates() {
-        this.createCrate(-5, 0);
-        this.createCrate(5, -3);
-        this.createCrate(3, 6);
+        this.createCrate(-10, 0);
+        this.createCrate(10, -6);
+        this.createCrate(6, 13);
     }
 
     public getCollisionBoxes(): THREE.Box3[] {

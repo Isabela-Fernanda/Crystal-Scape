@@ -17,7 +17,7 @@ export class Player {
     private walkTime = 0;
 
     private keys = new Set<string>();
-    private readonly moveSpeed = 4;
+    private readonly moveSpeed = 6;
 
     constructor() {
         this.group = new THREE.Group();
@@ -345,8 +345,8 @@ export class Player {
             // Tenta movimentar no eixo X.
             const nextX = THREE.MathUtils.clamp(
                 this.group.position.x + movementX,
-                -8.8,
-                8.8
+                -18.8,
+                18.8
             );
 
             if (!this.isColliding(
@@ -360,8 +360,8 @@ export class Player {
             // Tenta movimentar no eixo Z.
             const nextZ = THREE.MathUtils.clamp(
                 this.group.position.z + movementZ,
-                -8.8,
-                8.8
+                -18.8,
+                18.8
             );
 
             if (!this.isColliding(
@@ -375,14 +375,14 @@ export class Player {
             // Limita o personagem ao interior da arena.
             this.group.position.x = THREE.MathUtils.clamp(
                 this.group.position.x,
-                -8.8,
-                8.8
+                -18.8,
+                18.8
             );
 
             this.group.position.z = THREE.MathUtils.clamp(
                 this.group.position.z,
-                -8.8,
-                8.8
+                -18.8,
+                18.8
             );
 
             // Faz o personagem olhar para a direção do movimento.
