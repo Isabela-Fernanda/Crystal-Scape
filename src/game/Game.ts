@@ -201,6 +201,8 @@ export class Game {
                     if (this.checkEnemyCollision()) {
                         this.isGameOver = true;
                         console.log('GAME OVER! O dinossauro alcançou você!');
+
+                        this.notifyStateChange();
                     }
 
                     if (!this.isGameOver && this.portal.isPlayerNear(this.player.group.position)) {

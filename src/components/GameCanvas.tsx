@@ -5,15 +5,18 @@ import type { GameUIState } from '../game/Game';
 
 import { GameUI } from './GameUI';
 
+const initialState: GameUIState = {
+    collectedCrystals: 0,
+    totalCrystals: 5,
+    enemyActivated: false,
+    status: 'playing',
+};
+
 export function GameCanvas() {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const [gameState, setGameState] = useState<GameUIState>({
-        collectedCrystals: 0,
-        totalCrystals: 5,
-        enemyActivated: false,
-        status: 'playing',
-    });
+    const [gameState, setGameState] = useState<GameUIState>(initialState);
+    const [gameKey, setGameKey] = useState(0);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -27,7 +30,12 @@ export function GameCanvas() {
         return () => {
             game.dispose();
         };
-    }, []);
+    }, [gameKey]);
+
+    function handleRestart() {
+        setGameState(initialState);
+        setGameKey((current) => current + 1);
+    }
 
     return (
         <div className="relative w-full h-full">
@@ -36,7 +44,10 @@ export function GameCanvas() {
                 className="absolute inset-0"
             />
 
-            <GameUI state={gameState} />
+            <GameUI
+                state={gameState}
+                onRestart={handleRestart}
+            />
         </div>
     );
 }
