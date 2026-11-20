@@ -6,11 +6,21 @@ import { Collectibles } from './Collectibles';
 import { Player } from './Player';
 import { Enemy } from './Enemy';
 
+export type GameStatus = 'playing' | 'gameover' | 'victory';
+
+export interface GameUIState {
+    collectedCrystals: number;
+    totalCrystals: number;
+    enemyActivated: boolean;
+    status: GameStatus;
+}
+
 export class Game {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
 
+    private onStateChange: (state: GameUIState) => void;
     private isGameOver = false;
     private isVictory = false;
 
@@ -28,9 +38,11 @@ export class Game {
     private container: HTMLElement
 
     constructor(
-        container: HTMLElement
+        container: HTMLElement,
+        onStateChange: (state: GameUIState) => void,
     ) {
         this.container = container;
+        this.onStateChange = onStateChange;
 
         // Cena
         this.scene = new THREE.Scene();
@@ -96,9 +108,6 @@ export class Game {
         directionalLight.position.set(5, 12, 5);
         directionalLight.castShadow = true;
 
-        this.scene.add(directionalLight);
-
-        directionalLight.position.set(5, 10, 5);
         this.scene.add(directionalLight);
 
         // Criação do jogador
@@ -172,8 +181,12 @@ export class Game {
 
                     if (this.collectedCrystals >= 5) {
                         this.portal.activate();
+
                         console.log('O portal foi ativado!');
                     }
+
+                    // Notifica o React após qualquer coleta.
+                    this.notifyStateChange();
                 }
 
                 // Atualiza o dinossauro.
@@ -193,6 +206,8 @@ export class Game {
                     if (!this.isGameOver && this.portal.isPlayerNear(this.player.group.position)) {
                         this.isVictory = true;
                         console.log('VITÓRIA! Você escapou da arena!');
+
+                        this.notifyStateChange();
                     }
                 }
             }
@@ -221,6 +236,27 @@ export class Game {
             this.player.group.position.y + 1.4,
             this.player.group.position.z
         );
+    }
+
+    private notifyStateChange() {
+        let status: GameStatus = 'playing';
+
+        if (this.isGameOver) {
+            status = 'gameover';
+        } else if (this.isVictory) {
+            status = 'victory';
+        }
+
+        const state: GameUIState = {
+            collectedCrystals: this.collectedCrystals,
+            totalCrystals: this.collectibles.getTotalCount(),
+            enemyActivated: this.enemyActivated,
+            status,
+        };
+
+        console.log('Enviando estado para React:', state);
+
+        this.onStateChange(state);
     }
 
     private checkEnemyCollision(): boolean {
