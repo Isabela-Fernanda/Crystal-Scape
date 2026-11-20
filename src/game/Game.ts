@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 import { Arena } from './Arena';
+import { Collectibles } from './Collectibles';
 import { Player } from './Player';
 import { Enemy } from './Enemy';
 
@@ -10,6 +11,8 @@ export class Game {
     private renderer: THREE.WebGLRenderer;
 
     private arena: Arena;
+    private collectibles: Collectibles;
+    private collectedCrystals = 0;
     private player: Player;
     private enemy: Enemy;
     private animationId: number | null = null;
@@ -52,6 +55,10 @@ export class Game {
         // Criação da arena
         this.arena = new Arena();
         this.scene.add(this.arena.group);
+
+        // Criação dos cristais colecionáveis.
+        this.collectibles = new Collectibles();
+        this.scene.add(this.collectibles.group);
 
         // Iluminação ambiente
         const ambientLight = new THREE.AmbientLight(
@@ -123,6 +130,19 @@ export class Game {
             const deltaTime = this.timer.getDelta();
 
             this.player.update(deltaTime, this.camera, this.arena.getCollisionBoxes());
+
+            const newlyCollected = this.collectibles.update(
+                deltaTime,
+                this.player.group.position
+            );
+
+            if (newlyCollected > 0) {
+                this.collectedCrystals += newlyCollected;
+
+                console.log(
+                    `Cristais coletados: ${this.collectedCrystals}/${this.collectibles.getTotalCount()}`
+                );
+            }
 
             this.enemy.update(deltaTime, this.player.group.position, this.arena.group.children);
 
