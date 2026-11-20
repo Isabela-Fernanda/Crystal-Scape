@@ -124,7 +124,7 @@ export class Game {
 
             this.player.update(deltaTime, this.camera, this.arena.getCollisionBoxes());
 
-            this.enemy.update(deltaTime, this.player.group.position);
+            this.enemy.update(deltaTime, this.player.group.position, this.arena.group.children);
 
             this.updateCamera(deltaTime);
 

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 const EnemyState = {
     Patrolling: 0,
     Chasing: 1,
+    Searching: 2,
 } as const;
 
 type EnemyState =
@@ -39,6 +40,18 @@ export class Enemy {
     private detectionRadius = 8;
 
     private direction = new THREE.Vector3();
+
+    private lastKnownPlayerPosition = new THREE.Vector3();
+
+    private searchTimer = 0;
+    private searchDuration = 5;
+    private searchArrivalDistance = 0.5;
+    private hasReachedSearchPosition = false;
+
+    private raycaster = new THREE.Raycaster();
+
+    private visionHeights = [0.5, 1.5, 2.5];
+    private visionDirection = new THREE.Vector3();
 
     constructor() {
         this.group = new THREE.Group();
@@ -322,31 +335,41 @@ export class Enemy {
         return arm;
     }
 
-    public update(
-        deltaTime: number,
-        playerPosition: THREE.Vector3
-    ) {
-        // Calcula a distância horizontal até o jogador.
+    public update(deltaTime: number, playerPosition: THREE.Vector3, obstacles: THREE.Object3D[]) {
         const distanceToPlayer = Math.hypot(
             playerPosition.x - this.group.position.x,
             playerPosition.z - this.group.position.z
         );
 
-        // Decide o comportamento da criatura.
-        if (distanceToPlayer <= this.detectionRadius) {
+        // O inimigo detectou o jogador.
+        if (distanceToPlayer <= this.detectionRadius && this.canSeePlayer(playerPosition, obstacles)) {
             this.state = EnemyState.Chasing;
-        } else {
-            this.state = EnemyState.Patrolling;
+
+            // Atualiza constantemente a última posição conhecida.
+            this.lastKnownPlayerPosition.copy(playerPosition);
+        }
+        // O inimigo estava perseguindo, mas perdeu o jogador.
+        else if (this.state === EnemyState.Chasing) {
+            this.state = EnemyState.Searching;
+            this.searchTimer = 0;
+            this.hasReachedSearchPosition = false;
         }
 
-        // Executa o comportamento correspondente.
-        if (this.state === EnemyState.Chasing) {
-            this.chase(playerPosition, deltaTime);
-        } else {
-            this.patrol(deltaTime);
+        // Executa o comportamento correspondente ao estado atual.
+        switch (this.state) {
+            case EnemyState.Patrolling:
+                this.patrol(deltaTime);
+                break;
+
+            case EnemyState.Chasing:
+                this.chase(playerPosition, deltaTime);
+                break;
+
+            case EnemyState.Searching:
+                this.search(deltaTime);
+                break;
         }
 
-        // Atualiza a animação.
         this.updateAnimation(deltaTime);
     }
 
@@ -391,12 +414,8 @@ export class Enemy {
         this.setMoving(true);
     }
 
-    private chase(
-        playerPosition: THREE.Vector3,
-        deltaTime: number
-    ) {
-        this.direction
-            .subVectors(playerPosition, this.group.position);
+    private chase(playerPosition: THREE.Vector3, deltaTime: number ) {
+        this.direction.subVectors(playerPosition, this.group.position);
 
         this.direction.y = 0;
 
@@ -476,4 +495,94 @@ export class Enemy {
             );
         }
     }
+
+    private search(deltaTime: number) {
+        // Enquanto não chegou à última posição conhecida,
+        // continua se deslocando até ela.
+        if (!this.hasReachedSearchPosition) {
+            this.direction.subVectors(
+                this.lastKnownPlayerPosition,
+                this.group.position
+            );
+
+            this.direction.y = 0;
+
+            const distance = this.direction.length();
+
+            if (distance > this.searchArrivalDistance) {
+                this.direction.normalize();
+
+                const movement = Math.min(
+                    this.patrolSpeed * deltaTime,
+                    distance
+                );
+
+                this.group.position.addScaledVector(
+                    this.direction,
+                    movement
+                );
+
+                this.group.rotation.y = Math.atan2(
+                    this.direction.x,
+                    this.direction.z
+                );
+
+                this.setMoving(true);
+
+                return;
+            }
+
+            // Chegou à posição investigada.
+            this.hasReachedSearchPosition = true;
+            this.setMoving(false);
+        }
+
+        // Permanece no local procurando durante alguns segundos.
+        this.searchTimer += deltaTime;
+
+        // Gira lentamente para simular que está procurando.
+        this.group.rotation.y += deltaTime * 0.8;
+
+        if (this.searchTimer >= this.searchDuration) {
+            this.state = EnemyState.Patrolling;
+            this.searchTimer = 0;
+            this.hasReachedSearchPosition = false;
+        }
+    }
+
+    private canSeePlayer(playerPosition: THREE.Vector3, obstacles: THREE.Object3D[]): boolean {
+        const origin = this.group.position.clone();
+        origin.y += 2.5;
+
+        /* const distance = origin.distanceTo(playerPosition); */
+
+        this.visionDirection
+            .subVectors(playerPosition, origin)
+            .normalize();
+
+        for (const height of this.visionHeights) {
+            const target = playerPosition.clone();
+            target.y += height;
+
+            const direction = new THREE.Vector3()
+                .subVectors(target, origin)
+                .normalize();
+
+            this.raycaster.set(origin, direction);
+            this.raycaster.far = origin.distanceTo(target);
+
+            const intersections = this.raycaster.intersectObjects(
+                obstacles,
+                true
+            );
+
+            if (intersections.length === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
 }
