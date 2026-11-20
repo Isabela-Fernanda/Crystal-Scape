@@ -15,6 +15,7 @@ export class Game {
     private collectedCrystals = 0;
     private player: Player;
     private enemy: Enemy;
+    private enemyActivated = false;
     private animationId: number | null = null;
     private resizeObserver: ResizeObserver;
     private timer = new THREE.Timer();
@@ -142,9 +143,18 @@ export class Game {
                 console.log(
                     `Cristais coletados: ${this.collectedCrystals}/${this.collectibles.getTotalCount()}`
                 );
+
+                if (this.collectedCrystals >= 3 && !this.enemyActivated) {
+                    this.enemy.activate();
+                    this.enemyActivated = true;
+
+                    console.log('O dinossauro despertou!');
+                }
             }
 
-            this.enemy.update(deltaTime, this.player.group.position, this.arena.group.children);
+            if (this.enemyActivated) {
+                this.enemy.update(deltaTime, this.player.group.position, this.arena.group.children);
+            }
 
             this.updateCamera(deltaTime);
 

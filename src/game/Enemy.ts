@@ -55,6 +55,7 @@ export class Enemy {
 
     constructor() {
         this.group = new THREE.Group();
+        this.group.visible = false;
 
         const skinMaterial = new THREE.MeshStandardMaterial({
             color: 0x465b38,
@@ -414,7 +415,7 @@ export class Enemy {
         this.setMoving(true);
     }
 
-    private chase(playerPosition: THREE.Vector3, deltaTime: number ) {
+    private chase(playerPosition: THREE.Vector3, deltaTime: number) {
         this.direction.subVectors(playerPosition, this.group.position);
 
         this.direction.y = 0;
@@ -584,5 +585,8 @@ export class Enemy {
         return false;
     }
 
-
+    public activate() {
+        this.group.visible = true;
+        this.state = EnemyState.Patrolling;
+    }
 }
