@@ -10,6 +10,8 @@ export class Game {
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
 
+    private isGameOver = false;
+
     private arena: Arena;
     private collectibles: Collectibles;
     private collectedCrystals = 0;
@@ -124,14 +126,21 @@ export class Game {
     }
 
     start() {
-        const animate = () => {
-            this.animationId = requestAnimationFrame(animate);
+    const animate = () => {
+        this.animationId = requestAnimationFrame(animate);
 
-            this.timer.update();
-            const deltaTime = this.timer.getDelta();
+        this.timer.update();
+        const deltaTime = this.timer.getDelta();
 
-            this.player.update(deltaTime, this.camera, this.arena.getCollisionBoxes());
+        if (!this.isGameOver) {
+            // Atualiza o jogador.
+            this.player.update(
+                deltaTime,
+                this.camera,
+                this.arena.getCollisionBoxes()
+            );
 
+            // Atualiza os cristais.
             const newlyCollected = this.collectibles.update(
                 deltaTime,
                 this.player.group.position
@@ -144,7 +153,10 @@ export class Game {
                     `Cristais coletados: ${this.collectedCrystals}/${this.collectibles.getTotalCount()}`
                 );
 
-                if (this.collectedCrystals >= 3 && !this.enemyActivated) {
+                if (
+                    this.collectedCrystals >= 3 &&
+                    !this.enemyActivated
+                ) {
                     this.enemy.activate();
                     this.enemyActivated = true;
 
@@ -152,17 +164,29 @@ export class Game {
                 }
             }
 
+            // Atualiza o dinossauro.
             if (this.enemyActivated) {
-                this.enemy.update(deltaTime, this.player.group.position, this.arena.group.children);
+                this.enemy.update(
+                    deltaTime,
+                    this.player.group.position,
+                    this.arena.group.children
+                );
+
+                // Verifica se o dinossauro alcançou o jogador.
+                if (this.checkEnemyCollision()) {
+                    this.isGameOver = true;
+                    console.log('GAME OVER! O dinossauro alcançou você!');
+                }
             }
+        }
 
-            this.updateCamera(deltaTime);
+        this.updateCamera(deltaTime);
 
-            this.renderer.render(this.scene, this.camera);
-        };
+        this.renderer.render(this.scene, this.camera);
+    };
 
-        animate();
-    }
+    animate();
+}
 
     private updateCamera(deltaTime: number) {
         const targetPosition = new THREE.Vector3(
@@ -181,6 +205,18 @@ export class Game {
             this.player.group.position.z
         );
     }
+
+    private checkEnemyCollision(): boolean {
+    const playerBox = new THREE.Box3().setFromObject(
+        this.player.group
+    );
+
+    const enemyBox = new THREE.Box3().setFromObject(
+        this.enemy.group
+    );
+
+    return playerBox.intersectsBox(enemyBox);
+}
 
     dispose() {
         if (this.animationId !== null) {

@@ -37,7 +37,7 @@ export class Enemy {
     private state: EnemyState = EnemyState.Patrolling;
 
     private chaseSpeed = 4.5;
-    private detectionRadius = 8;
+    private detectionRadius = 18;
 
     private direction = new THREE.Vector3();
 
